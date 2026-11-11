@@ -221,7 +221,15 @@ class DynamicPPConfig:
         if getattr(hf_config, "use_index_cache", False) or "shared" in (
             getattr(hf_config, "indexer_types", ()) or ()
         ):
-            raise ValueError("Dynamic PP does not yet support cross-layer index reuse")
+            from vllm.platforms import current_platform
+
+            supports_index_reuse = getattr(
+                current_platform, "supports_dynamic_pp_index_reuse", None
+            )
+            if supports_index_reuse is None or not supports_index_reuse(hf_config):
+                raise ValueError(
+                    "Dynamic PP does not yet support cross-layer index reuse"
+                )
 
 
 @dataclass(frozen=True)

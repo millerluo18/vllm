@@ -92,3 +92,25 @@ def test_dynamic_config_rejects_cache_rebinding_that_replaces_movable_pages(
 def test_incompatible_runtime_is_rejected(config_factory, kwargs, message):
     with pytest.raises(ValueError, match=message):
         get_pp_config(config_factory(**kwargs))
+
+
+@pytest.mark.parametrize("capability", [None, False, True])
+def test_shared_index_requires_platform_transport(
+    config_factory, monkeypatch, capability
+):
+    """Shared-index models require an explicit platform transport capability."""
+    from types import SimpleNamespace
+
+    import vllm.platforms
+
+    config = config_factory()
+    config.model_config.hf_config.indexer_types = ["full", "shared"]
+    platform = SimpleNamespace()
+    if capability is not None:
+        platform.supports_dynamic_pp_index_reuse = lambda hf_config: capability
+    monkeypatch.setattr(vllm.platforms, "current_platform", platform)
+    if capability:
+        assert get_pp_config(config)[1].enabled
+    else:
+        with pytest.raises(ValueError, match="cross-layer index reuse"):
+            get_pp_config(config)

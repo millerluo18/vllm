@@ -244,3 +244,13 @@ Balancing can reduce bubbles caused by unequal stage times. Startup, drain,
 communication, and the indivisibility of layers still impose limits. Measure
 end-to-end throughput and latency with the intended workload before drawing a
 performance conclusion.
+
+### Platform adapters for shared indexers
+
+Cross-layer index reuse is rejected unless the platform explicitly advertises
+`supports_dynamic_pp_index_reuse(hf_config)`. The Ascend GLM-5.3 adapter provides
+this capability by loading overlapping GLM DSA layers and transporting the shared
+Top-K indices with each buffered activation batch. It retains the fresh-prefill,
+one-output-token, eager PP2 restrictions; it does not enable decode, chunked
+prefill, speculation, or context parallelism. Other platforms retain the default
+rejection until their adapters provide equivalent transport.
